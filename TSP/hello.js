@@ -4,6 +4,16 @@
 Cities = new Mongo.Collection("cities");
 
 if (Meteor.isClient) {
+
+  Router.route('/', function () {
+    this.render('hello');
+  });
+
+  // Load Google Maps
+  Meteor.startup(function() {
+    GoogleMaps.load();
+  });
+
   Template.leaderboard.helpers({
     cities: function () {
       return Cities.find({}, {sort: {createdAt: -1}});
@@ -19,16 +29,68 @@ if (Meteor.isClient) {
       // This function is called when the new task form is submitted
       var text = event.target.text.value;
 
-      Cities.insert({
-        name: text,
-        createdAt: new Date() // current time
+      if (text == "" || text == null) {
+        return;
+      }
+
+      var formattedCityJson;
+      var formattedCity;
+
+      //TODO Change error throwing mechanism for false requests.
+      Meteor.call('fetchFromService', text, function (err, respJson) {
+        if (err) {
+          window.alert("Error: " + err.reason);
+          console.log("error occured on receiving data on server. ", err);
+        } else {
+          console.log("respJson: ", respJson);
+
+          if(respJson.status == "OK") {
+            formattedCityJson = respJson;
+            formattedCity = formattedCityJson.results[0].formatted_address;
+
+            Cities.insert({
+              name: formattedCity,
+              createdAt: new Date() // current time
+            });
+          }
+          else{
+            window.alert("Invalid City name/code. ");
+          }
+          console.log("formatted City: ", formattedCity);
+        }
       });
+
+
 
       // Clear form
       event.target.text.value = "";
 
       // Prevent default form submit
       return false;
+    },
+
+    "click .request": function (event) {
+      // This function is called when Find Optimal Route button is pressed.
+
+      console.log("Button Clicked");
+
+      Router.route('/route', function() {
+        this.render('ROUTE');
+      });
+
+      if(Cities.length < 1){
+        // TODO Set error message.
+        return;
+      }
+
+      // Debug
+      document.getElementById("request").innerHTML = "Button Pressed";
+
+
+      // Get all Cities names.
+      var citiesReq = Cities.find(
+
+      )
     }
   });
 
@@ -47,16 +109,5 @@ if (Meteor.isClient) {
 
 // On server startup, create some cities if the database is empty.
 if (Meteor.isServer) {
-  Meteor.startup(function () {
-    if (Cities.find().count() === 0) {
-      var names = ["Ada Lovelace", "Grace Hopper", "Marie Curie",
-        "Carl Friedrich Gauss", "Nikola Tesla", "Claude Shannon"];
-      _.each(names, function (name) {
-        Cities.insert({
-          name: name,
-          score: Math.floor(Random.fraction() * 10) * 5
-        });
-      });
-    }
-  });
+
 }

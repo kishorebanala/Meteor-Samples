@@ -25,6 +25,10 @@
         <input type="text" name="text" placeholder="Enter City name or Zipcode" />
     </form>
 
+    <div class="submit">
+        <button class="request">Find Optimal Route</button>
+    </div>
+
 </template>
 
 <template name="city">
@@ -32,4 +36,10 @@
         <span class="name">{{name}}</span>
         <button class="delete">&times;</button>
     </li>
+</template>
+
+<template name="map">
+    <div class="map-container">
+        {{> googleMap name="exampleMap" options=exampleMapOptions}}
+    </div>
 </template>
